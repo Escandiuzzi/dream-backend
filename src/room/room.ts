@@ -7,22 +7,18 @@ export class Room {
     players : Array<Socket> = new Array();
     
     private started: boolean = false;
-    private numberOfPlayers : number = 0;
     private roles = ['sandman', 'good guy', 'bad guy'];
     
-    constructor(name: string, private io: Server) {
+    constructor(name: string, private numberOfPlayers : number, private io: Server) {
         this.name = name;
     }
 
     add(socket : Socket)
     {
-        socket.on('guessed', this.cardGuessed)
-        socket.on('skip', this.skipCard)
-
         if(!this.players.includes(socket)) {
             this.players.push(socket);
      
-            console.log('New player just joined', this.name);
+            console.log('New player just joined!', this.name);
 
             socket.join(this.name);
             
@@ -37,26 +33,18 @@ export class Room {
 
     private startGame() {
         
-        console.log('started game');
-        this.started = true;
+        console.log('Starting game...');
+        //this.started = true;
     
         this.io.to(this.name).emit('start', 'Game Started!');
 
         this.io.on('guessed', (socket) => {
-            console.log('received');    
+            
         });
 
         this.players.forEach(player => {
             let pos = RandomRange(0, 2);
-            player.emit('role', this.roles[pos]);
+            player.emit('role', {role: this.roles[pos]});
         });
-    }
-
-    private cardGuessed() {
-        console.log('Card Guessed!');
-    }
-
-    private skipCard() {
-        console.log('Skiped Card!');
     }
 }
