@@ -4,9 +4,15 @@ var randomWords = require('random-words');
 const playsPerTurn = 10;
 const roles = ['sandman', 'good guy', 'bad guy', 'guesser'];
 
+interface ConnectedUserProps {
+    username: string,
+    socket: Socket
+}
+
 export class Room {
 
-    private players: Array<Socket> = new Array();
+    private players: Array<{username: string, id: string}> = new Array();
+    private clients: Array<Socket> = new Array();
     private playersConnected = 0;
     
     private deck: string[] = [];
@@ -18,6 +24,12 @@ export class Room {
     private numberOfTurns = 0;
     private turnsPlayed = 0;
     private guesserIndex = 0;
+    private guesses = 0;
+    private skips = 0;
+    
+    private badGuys: Array<string> = [];
+    private goodGuys: Array<string> = [];
+    private sadmans: Array<string> = [];
 
     private lastRoleIndex = 0;
 
@@ -39,9 +51,11 @@ export class Room {
         return this.started;
     }
 
-    add(socket: Socket) {
-        if (!this.players.includes(socket) && this.numberOfPlayers > this.playersConnected) {
-            this.players.push(socket);
+    add({username, socket}: ConnectedUserProps) {
+        if (!this.clients.includes(socket) && this.numberOfPlayers > this.playersConnected) {
+            this.clients.push(socket);
+
+            this.players.push({username: username, id: socket.id});
 
             socket.on('guessed', () => this.handleGuess());
             socket.on('skipped', () => this.handleSkipCard());
@@ -53,6 +67,8 @@ export class Room {
 
             socket.join(this.name);
 
+            this.io.to(this.name).emit('user_joined', {players: this.players.map(player => player.username)});
+
             this.playersConnected++;
             console.log(this.playersConnected);
         }
@@ -60,17 +76,19 @@ export class Room {
 
     private handleGuess() {
         console.log('Dreamer guessed, picking another card!');
+        this.guesses;
         this.cardsGuessed.push(this.currentCard);
         this.drawCard();
     }
 
     private handleSkipCard() {
         console.log('Uuuh dreamer asked for another card');
+        this.skips++;
         this.drawCard();
     }
 
     private handleClientDisconnect(socket: Socket) {
-        const disconnectPlayerIndex = this.players.indexOf(socket);
+        const disconnectPlayerIndex = this.clients.indexOf(socket);
         console.log('Client disconnected', disconnectPlayerIndex);
 
         if(disconnectPlayerIndex > -1) {
@@ -107,16 +125,16 @@ export class Room {
     }
 
     private sortRoles() {
-        this.players.forEach(player => {
+        this.clients.forEach(socket => {
             let role = '';
 
-            if(player === this.players[this.guesserIndex]) {
+            if(socket === this.clients[this.guesserIndex]) {
                 role = roles[3];
             } else {
                 role = this.getRole();
             }
             
-            player.emit('role', { role: role});
+            socket.emit('role', { role: role});
         });
     }
 

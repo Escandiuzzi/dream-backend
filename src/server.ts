@@ -24,14 +24,13 @@ io.on('connection', (socket) => {
     if (!clients.includes(socket.id)) {
         console.log('Client connected')
         socket.on('create', (args) => {
-            const { name, numberOfPlayers } = args;
-            createRoom({ name: name, numberOfPlayers: numberOfPlayers, socket: socket });
+            const { username, name, numberOfPlayers } = args;
+            createRoom({ username: username, name: name, numberOfPlayers: numberOfPlayers, socket: socket });
         });
         socket.on('join', (args) => {
             console.log('User just joined');
-            console.log(args);
-            const { name } = args;
-            joinRoom({ name: name, socket: socket });
+            const { username, name } = args;
+            joinRoom({ username: username, name: name, socket: socket });
         });
 
         clients.push(socket.id);
@@ -43,19 +42,21 @@ io.on('guessed', (socket) => {
 });
 
 export interface CreateRoomData {
+    username: string,
     name: string,
     numberOfPlayers: number,
     socket: Socket
 }
 
 export interface JoinRoomData {
+    username: string,
     name: string,
     socket: Socket
 }
 
 export function createRoom(data: CreateRoomData) {
 
-    const { name, numberOfPlayers, socket } = data;
+    const { username, name, numberOfPlayers, socket } = data;
 
     console.log('Creating new room!', name, numberOfPlayers);
 
@@ -66,18 +67,18 @@ export function createRoom(data: CreateRoomData) {
         rooms.push(room);
     }
 
-    room.add(socket);
+    room.add({username: username, socket: socket});
 }
 
 export function joinRoom(data: JoinRoomData) {
 
-    const { name, socket } = data;
+    const { username, name, socket } = data;
 
     console.log('Joining new room!', name);
 
     let room = rooms.find(room => room.getName() === name);
 
     if (room != null) {
-        room.add(socket);
+        room.add({username: username, socket: socket});
     }
 }
