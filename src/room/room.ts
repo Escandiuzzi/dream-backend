@@ -67,7 +67,7 @@ export class Room {
 
             socket.join(this.name);
 
-            this.io.to(this.name).emit('user_joined', {players: this.players.map(player => player.username)});
+            this.io.to(this.name).emit('players_changed', {players: this.players.map(player => player.username)});
 
             this.playersConnected++;
             console.log(this.playersConnected);
@@ -101,6 +101,8 @@ export class Room {
         if(disconnectPlayerIndex === this.guesserIndex) {
             this.endTurn();
         }
+
+        this.io.to(this.name).emit('players_changed', {players: this.players.map(player => player.username)});
     }
 
     private startGame() {
