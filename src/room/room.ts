@@ -63,7 +63,7 @@ export class Room {
 
             socket.on("disconnect", () => {this.handleClientDisconnect(socket)});
 
-            console.log('New player just joined!', this.name);
+            console.log('New player just joined!', username, this.name);
 
             socket.join(this.name);
 
@@ -141,7 +141,7 @@ export class Room {
     }
 
     private getRole(): string {
-        if(this.lastRoleIndex === 2){
+        if(this.lastRoleIndex >= 2){
             this.lastRoleIndex = -1;
         }
 
